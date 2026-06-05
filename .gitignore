@@ -1,0 +1,11 @@
+# Backend
+backend/node_modules
+backend/.env
+
+# Frontend
+frontend/node_modules
+frontend/dist
+
+# Uploads folder (contains user files)
+backend/uploads/*
+!backend/uploads/.gitkeep
