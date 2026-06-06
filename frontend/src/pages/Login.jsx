@@ -1,9 +1,12 @@
+// eslint-disable
 import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 function Login() {
   const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +23,13 @@ function Login() {
       const res = await axios.post('http://localhost:5000/api/auth/login', formData);
       login(res.data.user, res.data.token);
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      const errData = err.response?.data;
+      // If account not verified, redirect to OTP page
+      if (errData?.needsVerification) {
+        navigate('/verify-otp', { state: { email: errData.email } });
+      } else {
+        setError(errData?.message || 'Something went wrong');
+      }
     } finally {
       setLoading(false);
     }

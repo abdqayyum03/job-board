@@ -23,6 +23,19 @@ const UserSchema = new mongoose.Schema({
     enum: ['employer', 'candidate'],
     required: true
   },
+  // Email verification
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  otp: {
+    type: String,
+    default: null
+  },
+  otpExpiry: {
+    type: Date,
+    default: null
+  },
   // Candidate specific fields
   skills: [String],
   bio: {

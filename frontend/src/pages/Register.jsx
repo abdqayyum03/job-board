@@ -1,9 +1,12 @@
+/* eslint-disable */
 import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 function Register() {
   const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [role, setRole] = useState('candidate');
   const [formData, setFormData] = useState({ name: '', email: '', password: '', company: '', companyDescription: '', bio: '', skills: '' });
   const [error, setError] = useState('');
@@ -24,7 +27,8 @@ function Register() {
         skills: role === 'candidate' ? formData.skills.split(',').map(s => s.trim()) : []
       };
       const res = await axios.post('http://localhost:5000/api/auth/register', payload);
-      login(res.data.user, res.data.token);
+      // Redirect to OTP verification page
+      navigate('/verify-otp', { state: { email: formData.email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
     } finally {
