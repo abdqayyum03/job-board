@@ -8,7 +8,11 @@ function Register() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const [role, setRole] = useState('candidate');
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', company: '', companyDescription: '', bio: '', skills: '' });
+  const [formData, setFormData] = useState({
+    name: '', email: '', password: '',
+    company: '', companyDescription: '',
+    bio: '', skills: ''
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,8 +30,7 @@ function Register() {
         role,
         skills: role === 'candidate' ? formData.skills.split(',').map(s => s.trim()) : []
       };
-      const res = await axios.post('http://localhost:5000/api/auth/register', payload);
-      // Redirect to OTP verification page
+      await axios.post('http://localhost:5000/api/auth/register', payload);
       navigate('/verify-otp', { state: { email: formData.email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
@@ -41,6 +44,27 @@ function Register() {
       <div style={styles.card}>
         <h2 style={styles.title}>Create Account</h2>
         <p style={styles.subtitle}>Join the Job Board today</p>
+
+        {/* Google Sign In Button */}
+        
+        <a
+          href='http://localhost:5000/api/auth/google'
+          style={styles.googleBtn}
+        >
+          <img
+            src='https://www.google.com/favicon.ico'
+            alt='Google'
+            style={styles.googleIcon}
+          />
+          Continue with Google
+        </a>
+
+        {/* Divider */}
+        <div style={styles.divider}>
+          <div style={styles.dividerLine}></div>
+          <span style={styles.dividerText}>Or with email and password</span>
+          <div style={styles.dividerLine}></div>
+        </div>
 
         {/* Role Selector */}
         <div style={styles.roleRow}>
@@ -61,18 +85,43 @@ function Register() {
         </div>
 
         {error && <div style={styles.error}>{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Full Name</label>
-            <input style={styles.input} type='text' name='name' placeholder='John Doe' value={formData.name} onChange={handleChange} required />
+            <input
+              style={styles.input}
+              type='text'
+              name='name'
+              placeholder='John Doe'
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>Email</label>
-            <input style={styles.input} type='email' name='email' placeholder='john@example.com' value={formData.email} onChange={handleChange} required />
+            <input
+              style={styles.input}
+              type='email'
+              name='email'
+              placeholder='john@example.com'
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>Password</label>
-            <input style={styles.input} type='password' name='password' placeholder='Minimum 6 characters' value={formData.password} onChange={handleChange} required />
+            <input
+              style={styles.input}
+              type='password'
+              name='password'
+              placeholder='Minimum 6 characters'
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
           </div>
 
           {/* Candidate Fields */}
@@ -80,11 +129,25 @@ function Register() {
             <>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Bio</label>
-                <input style={styles.input} type='text' name='bio' placeholder='e.g. Fresh graduate looking for opportunities' value={formData.bio} onChange={handleChange} />
+                <input
+                  style={styles.input}
+                  type='text'
+                  name='bio'
+                  placeholder='e.g. Fresh graduate looking for opportunities'
+                  value={formData.bio}
+                  onChange={handleChange}
+                />
               </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Skills (comma separated)</label>
-                <input style={styles.input} type='text' name='skills' placeholder='e.g. React, Node.js, MongoDB' value={formData.skills} onChange={handleChange} />
+                <input
+                  style={styles.input}
+                  type='text'
+                  name='skills'
+                  placeholder='e.g. React, Node.js, MongoDB'
+                  value={formData.skills}
+                  onChange={handleChange}
+                />
               </div>
             </>
           )}
@@ -94,11 +157,26 @@ function Register() {
             <>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Company Name</label>
-                <input style={styles.input} type='text' name='company' placeholder='e.g. Tech Solutions Sdn Bhd' value={formData.company} onChange={handleChange} required />
+                <input
+                  style={styles.input}
+                  type='text'
+                  name='company'
+                  placeholder='e.g. Tech Solutions Sdn Bhd'
+                  value={formData.company}
+                  onChange={handleChange}
+                  required
+                />
               </div>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Company Description</label>
-                <input style={styles.input} type='text' name='companyDescription' placeholder='Tell candidates about your company' value={formData.companyDescription} onChange={handleChange} />
+                <input
+                  style={styles.input}
+                  type='text'
+                  name='companyDescription'
+                  placeholder='Tell candidates about your company'
+                  value={formData.companyDescription}
+                  onChange={handleChange}
+                />
               </div>
             </>
           )}
@@ -107,10 +185,14 @@ function Register() {
             {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
-        <p style={styles.link}>Already have an account? <a href='/login' style={styles.anchor}>Login here</a></p>
+
+        <p style={styles.link}>
+          Already have an account?{' '}
+          <a href='/login' style={styles.anchor}>Login here</a>
+        </p>
       </div>
     </div>
-  );
+  )
 }
 
 const styles = {
@@ -118,6 +200,11 @@ const styles = {
   card: { backgroundColor: '#fff', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', width: '100%', maxWidth: '480px' },
   title: { fontSize: '26px', fontWeight: 'bold', color: '#1e1e2e', marginBottom: '6px' },
   subtitle: { color: '#888', marginBottom: '24px', fontSize: '14px' },
+  googleBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '12px', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '15px', fontWeight: '600', textDecoration: 'none', marginBottom: '16px' },
+  googleIcon: { width: '20px', height: '20px' },
+  divider: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' },
+  dividerLine: { flex: 1, height: '1px', backgroundColor: '#e5e7eb' },
+  dividerText: { fontSize: '13px', color: '#9ca3af', whiteSpace: 'nowrap' },
   roleRow: { display: 'flex', gap: '12px', marginBottom: '24px' },
   roleActive: { flex: 1, padding: '12px', backgroundColor: '#1e40af', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px' },
   roleInactive: { flex: 1, padding: '12px', backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px' },
@@ -128,6 +215,6 @@ const styles = {
   button: { width: '100%', padding: '12px', backgroundColor: '#1e40af', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', marginTop: '8px' },
   link: { textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#555' },
   anchor: { color: '#1e40af', fontWeight: 'bold', textDecoration: 'none' }
-};
+}
 
 export default Register;

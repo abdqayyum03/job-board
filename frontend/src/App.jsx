@@ -6,6 +6,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOTP from './pages/VerifyOTP';
+import SelectRole from './pages/SelectRole';
+import AuthSuccess from './pages/AuthSuccess';
 import Home from './pages/Home';
 import JobDetail from './pages/JobDetail';
 import EmployerDashboard from './pages/EmployerDashboard';
@@ -24,6 +26,8 @@ function App() {
         <Route path='/login' element={!user ? <Login /> : <Navigate to='/' />} />
         <Route path='/register' element={!user ? <Register /> : <Navigate to='/' />} />
         <Route path='/verify-otp' element={<VerifyOTP />} />
+        <Route path='/select-role' element={<SelectRole />} />
+        <Route path='/auth/success' element={<AuthSuccess />} />
         <Route path='/jobs/:id' element={<JobDetail />} />
         <Route path='/employer/dashboard' element={
           <ProtectedRoute allowedRole='employer'>

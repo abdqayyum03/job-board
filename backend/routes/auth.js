@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const passport = require('passport');
 const User = require('../models/User');
 
 // Nodemailer setup
@@ -25,36 +26,29 @@ router.post('/register', async (req, res) => {
   const { name, email, password, role, company, companyDescription, skills, bio } = req.body;
 
   try {
-    // Check if user already exists
     let user = await User.findOne({ email });
     if (user && user.isVerified) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Generate OTP and expiry
     const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
     if (user && !user.isVerified) {
-      // Update existing unverified user with new OTP
       user.otp = otp;
       user.otpExpiry = otpExpiry;
       await user.save();
     } else {
-      // Create new user
       user = new User({
         name, email, password, role,
         company, companyDescription, skills, bio,
         otp, otpExpiry
       });
-
-      // Hash password
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
       await user.save();
     }
 
-    // Send OTP email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -100,23 +94,19 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'Account already verified' });
     }
 
-    // Check OTP
     if (user.otp !== otp) {
       return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
     }
 
-    // Check OTP expiry
     if (new Date() > user.otpExpiry) {
       return res.status(400).json({ message: 'OTP has expired. Please register again.' });
     }
 
-    // Verify account
     user.isVerified = true;
     user.otp = null;
     user.otpExpiry = null;
     await user.save();
 
-    // Create JWT token
     const payload = { id: user._id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
@@ -153,7 +143,6 @@ router.post('/resend-otp', async (req, res) => {
       return res.status(400).json({ message: 'Account already verified' });
     }
 
-    // Generate new OTP
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -161,7 +150,6 @@ router.post('/resend-otp', async (req, res) => {
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    // Send new OTP email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -193,13 +181,11 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if account is verified
     if (!user.isVerified) {
       return res.status(400).json({
         message: 'Please verify your email first.',
@@ -208,13 +194,11 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create JWT token
     const payload = { id: user._id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
@@ -233,5 +217,75 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// @route   POST /api/auth/set-role
+// @desc    Set role for Google OAuth users
+router.post('/set-role', async (req, res) => {
+  const { userId, role, company } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.role = role;
+    if (company) user.company = company;
+    await user.save();
+
+    const payload = { id: user._id, role: user.role };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/auth/google
+// @desc    Initiate Google OAuth
+router.get('/google', passport.authenticate('google', {
+  scope: ['profile', 'email']
+}));
+
+// @route   GET /api/auth/google/callback
+// @desc    Google OAuth callback
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/register` }),
+  async (req, res) => {
+    try {
+      const user = req.user;
+
+      if (!user.role) {
+        return res.redirect(`${process.env.CLIENT_URL}/select-role?userId=${user._id}`);
+      }
+
+      const payload = { id: user._id, role: user.role };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+      res.redirect(`${process.env.CLIENT_URL}/auth/success?token=${token}&user=${encodeURIComponent(JSON.stringify({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }))}`);
+
+    } catch (err) {
+      console.error(err.message);
+      res.redirect(`${process.env.CLIENT_URL}/register`);
+    }
+  }
+);
 
 module.exports = router;
